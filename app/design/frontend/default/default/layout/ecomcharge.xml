@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<layout version="0.1.0">
+<!--
+Ecomcharge Failure Response Review
+-->
+<ecomcharge_standard_failure>
+    <reference name="root">
+        <action method="setTemplate"><template>page/2columns-right.phtml</template></action>
+    </reference>
+    <reference name="content">
+        <block type="ecomcharge/standard_failure" name="ecomcharge_standard_failure" template="ecomcharge/standard/failure.phtml">
+        </block>
+    </reference>
+</ecomcharge_standard_failure>
+
+<ecomcharge_standard_success>
+    <reference name="root">
+        <action method="setTemplate"><template>page/2columns-right.phtml</template></action>
+    </reference>
+    <reference name="content">
+        <block type="ecomcharge/standard_success" name="ecomcharge_standard_success" template="ecomcharge/standard/success.phtml">
+        </block>
+    </reference>
+</ecomcharge_standard_success>
+
+<ecomcharge_standard_redirect>
+    <reference name="root">
+        <action method="setTemplate"><template>page/2columns-right.phtml</template></action>
+    </reference>
+    <reference name="content">
+        <block type="ecomcharge/standard_redirect" name="ecomcharge_standard_redirect" template="ecomcharge/standard/redirect.phtml">
+        </block>
+    </reference>
+</ecomcharge_standard_redirect>
+
+
+</layout>

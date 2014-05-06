@@ -1,0 +1,12 @@
+<config>
+    <modules>
+              <Mage_Ecomcharge>
+                  <active>true</active>
+                  <codePool>local</codePool>
+                  <depends>
+                      <Mage_Payment />
+                  </depends>
+                   <version>0.1.0</version>
+               </Mage_Ecomcharge>
+           </modules>
+</config>
