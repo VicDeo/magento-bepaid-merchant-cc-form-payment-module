@@ -258,7 +258,7 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
 				$orderno = $res_ar['checkout']['order']['tracking_id'] ;
 				$testmode = $res_ar['checkout']['test'];
 				$test_msg = '';
-				if ($testmode == '1') $test_msg = "  *** Test Mode ***";			  			  
+				if ($this->responseArr['testmode'] == 'true') $test_msg = "  *** Test Mode ***";
 				
 				$order = Mage::getModel('sales/order');
 				$order->loadByIncrementId($orderno);
@@ -335,3 +335,4 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
     }
 			
 }
+
