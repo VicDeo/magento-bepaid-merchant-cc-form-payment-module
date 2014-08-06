@@ -14,7 +14,7 @@ $installer->run("CREATE TABLE IF NOT EXISTS `ecomcharge_transaction` (`id_ecomch
 
 
 $installer->run("
-CREATE TABLE `ecomcharge_api_debug` (
+CREATE TABLE IF NOT EXISTS `ecomcharge_api_debug` (
   `debug_id` int(10) unsigned NOT NULL auto_increment,
   `transaction_id` varchar(255) NOT NULL default '',
   `debug_at` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
