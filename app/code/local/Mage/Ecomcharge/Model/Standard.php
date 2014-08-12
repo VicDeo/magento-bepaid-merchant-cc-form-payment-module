@@ -12,7 +12,7 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
   protected $_canCapturePartial       = false;
   protected $_canRefund               = true;
   protected $_canUseForMultishipping  = false;
-  protected $_canSaveCc  = true;	
+  protected $_canSaveCc               = false;
   protected $_order = null;
 
 
@@ -188,7 +188,6 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
       $data = new Varien_Object($data);
     }
 
-
     $info = $this->getInfoInstance();
     $info->setCcType($data->getCcType())
       ->setCcOwner($data->getCcOwner())
@@ -199,7 +198,6 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
       ->setCcExpYear($data->getCcExpYear())
       ->setCcSsIssue($data->getCcSsIssue())
       ->setCcSsStartMonth($data->getCcSsStartMonth())
-      ->setCcSsStartYear($data->getCcCid())
       ;
     return $this;
   }	
@@ -364,15 +362,10 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
   public function prepareSave()
   {
     $info = $this->getInfoInstance();
-    if ($this->_canSaveCc) {
-      $info->setCcNumberEnc($info->encrypt($info->getCcNumber()));
-    }
-    //echo $info->getCcCid();
-    // Uncommented this line
-    //    $info->setCcCidEnc($info->encrypt($info->getCcCid()));
+    $info->setAdditionalInformation('cc_number', $info->encrypt($info->getCcNumber()) );
+    $info->setAdditionalInformation('cc_cid', $info->encrypt($info->getCcCid()) );
 
-    //    $info->setCcNumber(null)->setCcCid(null); 
-
+    $info->setCcNumber(null)->setCcCid(null); 
     return $this;
 
   }
@@ -413,7 +406,6 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
 
     $billing = $order->getBillingAddress();		
     $customer_details = Mage::getModel('customer/customer')->load( $order->getCustomerId() );
-    $payment = $this->getInfoInstance();		
 
     $shop_id = $this->getConfig()->getshop_id();
     $shop_pass = $this->getConfig()->getshop_pass();
@@ -467,18 +459,20 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
     $paymentfrm->SetCheckoutArray("customer", $customer);
     $token = $paymentfrm->GetToken();
 
-
+    $cc_data = $this->getInfoInstance();		
 
     $action_url = 'https://checkout.ecomcharge.com/ctp/payments';
-    $expyy = substr($payment->getCcExpYear(), 2);
-    $expmm = str_pad($payment->getCcExpMonth(), 2, "0", STR_PAD_LEFT);
+    $expyy = substr($cc_data->getCcExpYear(), 2);
+    $expmm = str_pad($cc_data->getCcExpMonth(), 2, "0", STR_PAD_LEFT);
     $coFields = array();
-    $coFields['request[credit_card][number]'] = $payment->getCcNumber();
-    $coFields['request[credit_card][holder]'] =$payment->getCcOwner();
+    $coFields['request[credit_card][number]'] = $cc_data->decrypt($cc_data->getAdditionalInformation('cc_number'));
+    $coFields['request[credit_card][holder]'] = $cc_data->getCcOwner();
     $coFields['request[credit_card][exp_date]'] = $expmm .'/'. $expyy;
-    $coFields['request[credit_card][verification_value]'] = $payment->getCcSsStartYear();
+    $coFields['request[credit_card][verification_value]'] = $cc_data->decrypt($cc_data->getAdditionalInformation('cc_cid'));
     $coFields['request[token]'] = $token;		
 
+    $cc_data->setAdditionalInformation('cc_number', null);
+    $cc_data->setAdditionalInformation('cc_cid', null);
 
     return $coFields;
   }
