@@ -125,20 +125,19 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
       if ($shop_ptype == 'authorize')	{
         $payment->addTransaction(Mage_Sales_Model_Order_Payment_Transaction::TYPE_AUTH);
         $message = Mage::helper('ecomcharge')->__('Callback received. eComCharge Payment Authorized. UID:'.$this->responseArr['transid'].$test_msg);			
-        $order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false)
-          ->save();
+        $order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false);
       }
       else 
       {
         $payment->addTransaction(Mage_Sales_Model_Order_Payment_Transaction::TYPE_CAPTURE);
         $message = Mage::helper('ecomcharge')->__('Callback received. eComCharge Payment Captured. UID:'.$this->responseArr['transid'].$test_msg);						
-        $order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false)
-          ->save();
+        $order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false);
 
       }
 
-
-      $order->sendNewOrderEmail();		
+      $order->sendNewOrderEmail();
+      $order->setEmailSent(true);
+      $order->save();
 
     }
     else {
