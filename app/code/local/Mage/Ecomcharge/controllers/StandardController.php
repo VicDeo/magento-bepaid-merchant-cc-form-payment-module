@@ -100,12 +100,11 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
 
       if (!($shop_mode == 'true')) $shop_mode = 'live';
 
-
       $write = Mage::getSingleton("core/resource")->getConnection("core_write");
       $query = 'insert into ecomcharge_transaction (type, id_ecomcharge_customer, id_cart, id_order,
         ecom_uid, amount, status, currency, mode, date_add)	VALUES ("'.$shop_ptype.'", '.$order->getCustomerId().', '.$this->responseArr['orderno'].', '.$this->responseArr['orderno'].', "'.$this->responseArr['transid'].'", '.$this->responseArr['amount'].', "'.$this->responseArr['status'].'", "'.$this->responseArr['currency'].'", "'.$shop_mode.'", NOW())';
 
-      $write->query($query);		
+      $write->query($query);
 
       $payment = $order->getPayment();
 
@@ -115,20 +114,19 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
       if ($shop_ptype == 'authorize')	{
         $payment->addTransaction(Mage_Sales_Model_Order_Payment_Transaction::TYPE_AUTH);
         $message = Mage::helper('ecomcharge')->__('Callback received. eComCharge Payment Authorized. UID:'.$this->responseArr['transid'].$test_msg);			
-        $order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false)
-          ->save();
+        $order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false);
       }
       else 
       {
         $payment->addTransaction(Mage_Sales_Model_Order_Payment_Transaction::TYPE_CAPTURE);
         $message = Mage::helper('ecomcharge')->__('Callback received. eComCharge Payment Captured. UID:'.$this->responseArr['transid'].$test_msg);						
-        $order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false)
-          ->save();
+        $order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false);
 
       }
 
-
-      $order->sendNewOrderEmail();		
+      $order->sendNewOrderEmail();
+      $order->setEmailSent(true)
+      $order->save();
 
     }
     else {
