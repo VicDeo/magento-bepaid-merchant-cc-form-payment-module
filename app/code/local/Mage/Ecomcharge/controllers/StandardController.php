@@ -136,7 +136,7 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
       }
 
       $order->sendNewOrderEmail();
-      $order->setEmailSent(true)
+      $order->setEmailSent(true);
       $order->save();
 
     }
