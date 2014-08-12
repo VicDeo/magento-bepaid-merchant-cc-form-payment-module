@@ -101,11 +101,21 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
       if (!($shop_mode == 'true')) $shop_mode = 'live';
 
 
-      $write = Mage::getSingleton("core/resource")->getConnection("core_write");
-      $query = 'insert into ecomcharge_transaction (type, id_ecomcharge_customer, id_cart, id_order,
-        ecom_uid, amount, status, currency, mode, date_add)	VALUES ("'.$shop_ptype.'", '.$order->getCustomerId().', '.$this->responseArr['orderno'].', '.$this->responseArr['orderno'].', "'.$this->responseArr['transid'].'", '.$this->responseArr['amount'].', "'.$this->responseArr['status'].'", "'.$this->responseArr['currency'].'", "'.$shop_mode.'", NOW())';
-
-      $write->query($query);		
+      $dateNow = Mage::getModel('core/date')->date('yyyy-MM-dd H:m:s');
+      
+      $transaction = Mage::getModel('ecomcharge/transaction');
+      $transaction->setType($shop_ptype)
+          ->setIdEcomchargeCustomer($order->getCustomerId())
+          ->setIdCart($this->responseArr['orderno'])
+          ->setIdOrder($this->responseArr['orderno'])
+          ->setEcomUid($this->responseArr['transid'])
+          ->setAmount($this->responseArr['amount'])
+          ->setStatus($this->responseArr['status'])
+          ->setCurrency($this->responseArr['currency'])
+          ->setMode($shop_mode)
+          ->setDateAdd($dateNow)
+          ->save()
+      ;
 
       $payment = $order->getPayment();
 

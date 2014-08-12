@@ -16,6 +16,7 @@
                 <class>Mage_Ecomcharge_Model_Mysql4</class>
                 <entities>
                     <api_debug><table>ecomcharge_api_debug</table></api_debug>
+                    <transaction><table>ecomcharge_transaction</table></transaction>
                 </entities>
             </ecomcharge_mysql4>
         </models>
