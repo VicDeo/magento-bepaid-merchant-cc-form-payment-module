@@ -131,6 +131,7 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
       {
         $payment->addTransaction(Mage_Sales_Model_Order_Payment_Transaction::TYPE_CAPTURE);
         $message = Mage::helper('ecomcharge')->__('Callback received. eComCharge Payment Captured. UID:'.$this->responseArr['transid'].$test_msg);						
+        $this->saveInvoice($order);
         $order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false);
 
       }
@@ -173,10 +174,7 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
       $invoice = $order->prepareInvoice();
 
       $invoice->register()->capture();
-      Mage::getModel('core/resource_transaction')
-        ->addObject($invoice)
-        ->addObject($invoice->getOrder())
-        ->save();
+      $order->addRelatedObject($invoice);
       return true;
     }
 
