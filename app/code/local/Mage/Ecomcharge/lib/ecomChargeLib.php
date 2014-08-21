@@ -23,8 +23,6 @@ class ecomChargeLib
 	$this->ecomUser = $_ecomUser;
 	$this->ecomPass = $_ecomPass;	 
 	$this->ecomMode = $_mode;
-//	$this->ecomMode = '';
-	$this->ecomMode = 'test';
 	$this->CcyMultiplyer = 100;	
 	$this->ecomIPNArray = array();
 	$this->ecomCheckoutArrayarray = array("checkout" => array("transaction_type" => "payment"));	
