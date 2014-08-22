@@ -291,23 +291,27 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
           return false;
         }
 
+        
         $payment = $order->getPayment();
-
-        $payment->setTransactionId($uid)
-          ->setParentTransactionId(null)
-          ->setIsTransactionClosed(0);
-        if ($shop_ptype == 'authorize')	{
-          $payment->addTransaction(Mage_Sales_Model_Order_Payment_Transaction::TYPE_AUTH);
-          $message = Mage::helper('ecomcharge')->__('Customer returned. eComCharge Payment Authorized. UID:'.$uid.', Payment Message: '.$msg3d.$test_msg);
-          $order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false)
-            ->save();
-        }
-        else
-        {
-          $payment->addTransaction(Mage_Sales_Model_Order_Payment_Transaction::TYPE_CAPTURE);
-          $message = Mage::helper('ecomcharge')->__('Customer returned. eComCharge Payment Captured. UID:'.$uid.', Payment Message: '.$msg3d.$test_msg);
-          $order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false)
-            ->save();
+        
+        /* Check if IPN is not arrived earlier */
+        if (!$payment->getTransaction($uid)){
+          $payment->setTransactionId($uid)
+            ->setParentTransactionId(null)
+            ->setIsTransactionClosed(0);
+          if ($shop_ptype == 'authorize')	{
+            $payment->addTransaction(Mage_Sales_Model_Order_Payment_Transaction::TYPE_AUTH);
+            $message = Mage::helper('ecomcharge')->__('Customer returned. eComCharge Payment Authorized. UID:'.$uid.', Payment Message: '.$msg3d.$test_msg);
+            $order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false)
+              ->save();
+          }
+          else
+          {
+            $payment->addTransaction(Mage_Sales_Model_Order_Payment_Transaction::TYPE_CAPTURE);
+            $message = Mage::helper('ecomcharge')->__('Customer returned. eComCharge Payment Captured. UID:'.$uid.', Payment Message: '.$msg3d.$test_msg);
+            $order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false)
+              ->save();
+          }
         }
       }
     }
