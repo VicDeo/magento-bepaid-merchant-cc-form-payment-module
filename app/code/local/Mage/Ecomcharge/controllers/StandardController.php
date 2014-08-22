@@ -22,6 +22,16 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
   {
     return $this->getStandard()->getConfig();
   }
+  
+  /**
+   * Get API model
+   *
+   */
+  public function getApi()
+  {
+    return $this->getStandard()->getApi();
+  }
+
 
 
   /**
@@ -194,10 +204,8 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
    */
   protected function preResponse ()
   {
-    $ExternalLibPath =realpath(dirname(__FILE__)).DS.'..'.DS . 'lib' . DS .'ecomChargeLib.php';
-    require_once ($ExternalLibPath);
-
-    $paymentfrm = new ecomChargeLib('', '', '');
+  
+    $paymentfrm = $this->getApi();
     $paymentfrm->validateIPN();
     $this->responseArr['currency'] = $paymentfrm->GetPaymentCurrency();
     $paymentfrm->SetCurrencyMultiplyer($this->responseArr['currency']);
@@ -218,15 +226,7 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
     $message = 'Payment Failed. ';
 
     if ($uid) {
-      $shop_id = $this->getConfig()->getshop_id();
-      $shop_pass = $this->getConfig()->getshop_pass();
-      $shop_ptype = $this->getConfig()->getpayment_action();
-      $shop_mode = $this->getConfig()->getMode();
-
-      $ExternalLibPath =realpath(dirname(__FILE__)).DS.'..'.DS . 'lib' . DS .'ecomChargeLib.php';
-      require_once ($ExternalLibPath);
-
-      $paymentfrm = new ecomChargeLib($shop_id, $shop_pass, $shop_mode);
+      $paymentfrm = $this->getApi();
       $res_ar = $paymentfrm->Query2($uid);
       if ($res_ar['checkout']['message']) {
         $message = $res_ar['checkout']['message'];
@@ -264,15 +264,8 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
     $uid = $_REQUEST['token'];
 
     if ($uid) {
-      $shop_id = $this->getConfig()->getshop_id();
-      $shop_pass = $this->getConfig()->getshop_pass();
       $shop_ptype = $this->getConfig()->getpayment_action();
-      $shop_mode = $this->getConfig()->getMode();
-
-      $ExternalLibPath =realpath(dirname(__FILE__)).DS.'..'.DS . 'lib' . DS .'ecomChargeLib.php';
-      require_once ($ExternalLibPath);
-
-      $paymentfrm = new ecomChargeLib($shop_id, $shop_pass, $shop_mode);
+      $paymentfrm = $this->getApi();
       $res_ar = $paymentfrm->Query2($uid);
       $uid = $res_ar['checkout']['gateway_response']['payment']['uid'];
       $res_ar1 = $paymentfrm->Query($uid);
