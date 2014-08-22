@@ -79,7 +79,11 @@ class Mage_Ecomcharge_Model_Config extends Varien_Object
      */
     public function getMode ()
     {
-        return $this->getConfigData('mode');
+        if($this->getConfigData('mode')){
+            return self::MODE_TEST;
+        } else {
+            return self::MODE_LIVE;
+        }
     }
 
     /**

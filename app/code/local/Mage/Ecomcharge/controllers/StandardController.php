@@ -132,6 +132,7 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
       {
         $payment->addTransaction(Mage_Sales_Model_Order_Payment_Transaction::TYPE_CAPTURE);
         $message = Mage::helper('ecomcharge')->__('Callback received. eComCharge Payment Captured. UID:'.$this->responseArr['transid'].$test_msg);
+        $this->saveInvoice($order);
         $order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false);
       }
 
@@ -220,7 +221,7 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
       $shop_id = $this->getConfig()->getshop_id();
       $shop_pass = $this->getConfig()->getshop_pass();
       $shop_ptype = $this->getConfig()->getpayment_action();
-      $shop_mode = $this->getConfig()->getmode();
+      $shop_mode = $this->getConfig()->getMode();
 
       $ExternalLibPath =realpath(dirname(__FILE__)).DS.'..'.DS . 'lib' . DS .'ecomChargeLib.php';
       require_once ($ExternalLibPath);
@@ -266,7 +267,7 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
       $shop_id = $this->getConfig()->getshop_id();
       $shop_pass = $this->getConfig()->getshop_pass();
       $shop_ptype = $this->getConfig()->getpayment_action();
-      $shop_mode = $this->getConfig()->getmode();
+      $shop_mode = $this->getConfig()->getMode();
 
       $ExternalLibPath =realpath(dirname(__FILE__)).DS.'..'.DS . 'lib' . DS .'ecomChargeLib.php';
       require_once ($ExternalLibPath);

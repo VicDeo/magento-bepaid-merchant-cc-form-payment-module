@@ -73,7 +73,7 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
       $shop_id = $this->getConfig()->getshop_id();
       $shop_pass = $this->getConfig()->getshop_pass();
       $shop_ptype = $this->getConfig()->getpayment_action();		
-      $shop_mode = $this->getConfig()->getmode();		
+      $shop_mode = $this->getConfig()->getMode();		
       $currency_code = $payment->getOrder()->getBaseCurrencyCode();		
       $ExternalLibPath =realpath(dirname(__FILE__)).DS.'..'.DS . 'lib' . DS .'ecomChargeLib.php';
       require_once ($ExternalLibPath);
@@ -115,7 +115,7 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
     $shop_id = $this->getConfig()->getshop_id();
     $shop_pass = $this->getConfig()->getshop_pass();
     $shop_ptype = $this->getConfig()->getpayment_action();		
-    $shop_mode = $this->getConfig()->getmode();		
+    $shop_mode = $this->getConfig()->getMode();		
     $currency_code = $payment->getOrder()->getBaseCurrencyCode();		
 
 
@@ -410,7 +410,7 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
     $shop_id = $this->getConfig()->getshop_id();
     $shop_pass = $this->getConfig()->getshop_pass();
     $shop_ptype = $this->getConfig()->getpayment_action();		
-    $shop_mode = $this->getConfig()->getmode();		
+    $shop_mode = $this->getConfig()->getMode();		
     list($lang_iso_code) = explode("_", Mage::app()->getLocale()->getLocaleCode());
 
     $sp_lang = array('en', 'es', 'tr', 'de', 'it', 'ru', 'zh', 'fr');
