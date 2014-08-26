@@ -331,11 +331,12 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
       $this->_redirect('checkout/cart');
       return;
     }
-
+    $this->_redirect('checkout/onepage/success');
+/*
     $this->loadLayout();
     $this->_initLayoutMessages('ecomcharge/session');
     $this->renderLayout();
-
+*/
   }
 
   /**
