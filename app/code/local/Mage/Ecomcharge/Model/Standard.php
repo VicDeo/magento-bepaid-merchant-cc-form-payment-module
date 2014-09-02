@@ -36,6 +36,12 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
     return Mage::getSingleton('ecomcharge/config');
   }
 
+  
+  public function getApi(){
+      return Mage::getModel('ecomcharge/api')->getApi();
+  }
+  
+  
   public function isAvailable($quote = null)
   {
     if (parent::isAvailable($quote)) {
@@ -70,18 +76,10 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
   {
     $trans_id = $payment->getParentTransactionId();
     if ($trans_id){
-      $shop_id = $this->getConfig()->getshop_id();
-      $shop_pass = $this->getConfig()->getshop_pass();
-      $shop_ptype = $this->getConfig()->getpayment_action();		
-      $shop_mode = $this->getConfig()->getMode();		
       $currency_code = $payment->getOrder()->getBaseCurrencyCode();		
-      $ExternalLibPath =realpath(dirname(__FILE__)).DS.'..'.DS . 'lib' . DS .'ecomChargeLib.php';
-      require_once ($ExternalLibPath);
-
       $order =  $payment->getOrder();
 
-
-      $paymentfrm = new ecomChargeLib($shop_id, $shop_pass, $shop_mode);
+      $paymentfrm = $this->getApi();
       $paymentfrm->SetCurrencyMultiplyer($currency_code);
       $resAr = $paymentfrm->Capture($trans_id, $amount);	
 
@@ -111,19 +109,9 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
     $reason = $this->getReason() ? $this->getReason() : Mage::helper('ecomcharge')->__('No Reason');
     $comment = $this->getComment() ? $this->getComment() : Mage::helper('ecomcharge')->__('No Comment');
     $trans_id = $payment->getParentTransactionId();
-
-    $shop_id = $this->getConfig()->getshop_id();
-    $shop_pass = $this->getConfig()->getshop_pass();
-    $shop_ptype = $this->getConfig()->getpayment_action();		
-    $shop_mode = $this->getConfig()->getMode();		
     $currency_code = $payment->getOrder()->getBaseCurrencyCode();		
 
-
-    $ExternalLibPath =realpath(dirname(__FILE__)).DS.'..'.DS . 'lib' . DS .'ecomChargeLib.php';
-    require_once ($ExternalLibPath);
-
-
-    $paymentfrm = new ecomChargeLib($shop_id, $shop_pass, $shop_mode);
+    $paymentfrm = $this->getApi();
     $paymentfrm->SetCurrencyMultiplyer($currency_code);
     $resRedund = $paymentfrm->Refund($trans_id,$amount,$reason);
 
@@ -415,10 +403,7 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
     $customer_details = Mage::getModel('customer/customer')->load( $order->getCustomerId() );
     $payment = $this->getInfoInstance();		
 
-    $shop_id = $this->getConfig()->getshop_id();
-    $shop_pass = $this->getConfig()->getshop_pass();
     $shop_ptype = $this->getConfig()->getpayment_action();		
-    $shop_mode = $this->getConfig()->getMode();		
     list($lang_iso_code) = explode("_", Mage::app()->getLocale()->getLocaleCode());
 
     $sp_lang = array('en', 'es', 'tr', 'de', 'it', 'ru', 'zh', 'fr');
@@ -455,10 +440,7 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
       $customer['state'] = $billing->getRegionCode();		
     }
 
-    $ExternalLibPath =realpath(dirname(__FILE__)).DS.'..'.DS . 'lib' . DS .'ecomChargeLib.php';
-    require_once ($ExternalLibPath);
-
-    $paymentfrm = new ecomChargeLib($shop_id, $shop_pass, $shop_mode);
+    $paymentfrm = $this->getApi();
     $paymentfrm->SetCurrencyMultiplyer($order['currency']);
     if ($shop_ptype == 'authorize') $paymentfrm->SetAuthorization();
     $order["amount"] = $amount * $paymentfrm->GetCurrencyMultiplyer();
