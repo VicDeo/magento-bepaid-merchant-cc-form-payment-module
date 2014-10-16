@@ -129,29 +129,44 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
 
       $payment = $order->getPayment();
 
-      $payment->setLastTransId($this->responseArr['transid'])
+      $payment->setTransactionId($this->responseArr['transid'])
         ->setParentTransactionId(null)
         ->setIsTransactionClosed(0);
-      if ($shop_ptype == 'authorize')	{
+        
+        
+      if ($shop_ptype == 'authorize'){
         $payment->addTransaction(Mage_Sales_Model_Order_Payment_Transaction::TYPE_AUTH);
         $message = Mage::helper('ecomcharge')->__('Callback received. eComCharge Payment Authorized. UID:'.$this->responseArr['transid'].$test_msg);
         $this->saveInvoice($order);
         $order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false);
-      }
-      else
-      {
+      } else {
         $payment->addTransaction(Mage_Sales_Model_Order_Payment_Transaction::TYPE_CAPTURE);
         $message = Mage::helper('ecomcharge')->__('Callback received. eComCharge Payment Captured. UID:'.$this->responseArr['transid'].$test_msg);
-        $this->saveInvoice($order);
         $order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false);
+
+        $payment->setTransactionId($this->responseArr['transid'])
+            ->setParentTransactionId(null)
+            ->setShouldCloseParentTransaction(false)
+            ->setIsTransactionClosed(0)
+            ->registerCaptureNotification(
+                $this->responseArr['amount'],
+                false
+            );
+        $order->save();
+        
+
+        //$this->saveInvoice($order);
       }
 
-      $order->sendNewOrderEmail();
-      $order->setEmailSent(true);
-      $order->save();
-
-    }
-    else {
+      $invoice = $payment->getCreatedInvoice();
+        if ($invoice){
+            $order->sendNewOrderEmail()
+               ->setEmailSent(true)
+               ->setIsCustomerNotified(true)
+               ->save()
+          ;
+        }
+    } else {
       $order = Mage::getModel('sales/order');
       $order->loadByIncrementId($this->responseArr['orderno']);
 
@@ -184,11 +199,6 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
       $invoice = $order->prepareInvoice();
 
       $invoice->register()->capture();
-/*      Mage::getModel('core/resource_transaction')
-        ->addObject($invoice)
-        ->addObject($invoice->getOrder())
-        ->save();
-*/
       $order->addRelatedObject($invoice);
       return true;
     }
