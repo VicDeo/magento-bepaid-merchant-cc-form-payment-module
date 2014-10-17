@@ -155,23 +155,22 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
         $message = Mage::helper('ecomcharge')->__('Callback received. eComCharge Payment Authorized. UID:'.$this->responseArr['transid'].$test_msg);
       } else {
         $message = Mage::helper('ecomcharge')->__('Callback received. eComCharge Payment Captured. UID:'.$this->responseArr['transid'].$test_msg);
-        $this->_processPayment(); 
+        $this->_processPayment();
       }
-      
-      $this->_order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false);
       try {
-        $this->_order->save();
-      } catch (Exception $e) {
-        
-      }
-      
-      $invoice = $payment->getCreatedInvoice();
-      if ($invoice){
+        $this->_order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false)
+            ->save()
+        ;
+        $invoice = $payment->getCreatedInvoice();
+        if ($invoice){
             $this->_order->sendNewOrderEmail()
                ->setEmailSent(true)
                ->setIsCustomerNotified(true)
                ->save()
           ;
+        }
+      } catch (Exception $e) {
+        Mage::logException($e);
       }
     } else {
       $this->_writeOrderHistory(
@@ -208,8 +207,7 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
    */
   protected function preResponse ()
   {
-  
-    $paymentfrm = $this->getApi();
+      $paymentfrm = $this->getApi();
     $paymentfrm->validateIPN();
     $this->responseArr['currency'] = $paymentfrm->GetPaymentCurrency();
     $paymentfrm->SetCurrencyMultiplyer($this->responseArr['currency']);
@@ -220,12 +218,10 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
     $this->responseArr['testmode'] = $paymentfrm->Gettestmode();
 
     $this->isValidResponse = true;
-
   }
 
   public function  failureResponseAction()
   {
-
     $uid = $_REQUEST['token'];
     $message = 'Payment Failed. ';
 
@@ -278,7 +274,6 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
       if (array_key_exists('three_d_secure_verification', $res_ar1['transaction'])){
         $msg3d = ', 3-D Enrollment Verification Status: '.$res_ar1['transaction']['three_d_secure_verification']['ve_status'];
         $msg3d .= ', 3-D Payment Authentication Status: '.$res_ar1['transaction']['three_d_secure_verification']['pa_status'];
-
       }
 
       $status = $res_ar1['transaction']['status'];
@@ -292,18 +287,32 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
         if (!$this->_order->getId()) {
           return false;
         }
-        
+
+        $transactionType = $shop_ptype == 'authorize' ? Mage_Sales_Model_Order_Payment_Transaction::TYPE_AUTH : Mage_Sales_Model_Order_Payment_Transaction::TYPE_CAPTURE;
         $payment = $this->_order->getPayment();
+        $payment->addTransaction($transactionType);
         if ($shop_ptype == 'authorize'){
-            $payment->addTransaction(Mage_Sales_Model_Order_Payment_Transaction::TYPE_AUTH);
             $message = Mage::helper('ecomcharge')->__('Customer returned. eComCharge Payment Authorized. UID:'.$uid.', Payment Message: '.$msg3d.$test_msg);
         } else {
-            $payment->addTransaction(Mage_Sales_Model_Order_Payment_Transaction::TYPE_CAPTURE);
             $message = Mage::helper('ecomcharge')->__('Customer returned. eComCharge Payment Captured. UID:'.$uid.', Payment Message: '.$msg3d.$test_msg);
+            $this->_processPayment();
         }
-        $this->_order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false)
-              ->save()
-        ;
+        
+        try {
+          $this->_order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false)
+            ->save()
+          ;
+          $invoice = $payment->getCreatedInvoice();
+          if ($invoice){
+            $this->_order->sendNewOrderEmail()
+               ->setEmailSent(true)
+               ->setIsCustomerNotified(true)
+               ->save()
+            ;
+          }
+        } catch (Exception $e) {
+          Mage::logException($e);
+        }
       }
     }
 
@@ -355,4 +364,3 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
   }
 
 }
-
