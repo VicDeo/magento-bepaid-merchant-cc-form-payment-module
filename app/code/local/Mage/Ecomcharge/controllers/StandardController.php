@@ -288,28 +288,23 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
           return false;
         }
 
-        $transactionType = $shop_ptype == 'authorize' ? Mage_Sales_Model_Order_Payment_Transaction::TYPE_AUTH : Mage_Sales_Model_Order_Payment_Transaction::TYPE_CAPTURE;
-        $payment = $this->_order->getPayment();
-        $payment->addTransaction($transactionType);
         if ($shop_ptype == 'authorize'){
             $message = Mage::helper('ecomcharge')->__('Customer returned. eComCharge Payment Authorized. UID:'.$uid.', Payment Message: '.$msg3d.$test_msg);
         } else {
             $message = Mage::helper('ecomcharge')->__('Customer returned. eComCharge Payment Captured. UID:'.$uid.', Payment Message: '.$msg3d.$test_msg);
-            $this->_processPayment();
         }
-        
+       
+        if  ($this->_order->getState() == Mage_Sales_Model_Order::STATE_COMPLETE){
+            $this-> _writeOrderHistory($message);
+        } else {
+            $transactionType = $shop_ptype == 'authorize' ? Mage_Sales_Model_Order_Payment_Transaction::TYPE_AUTH : Mage_Sales_Model_Order_Payment_Transaction::TYPE_CAPTURE;
+            $payment = $this->_order->getPayment();
+            $payment->addTransaction($transactionType);
+            $this->_order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false);
+
+        }
         try {
-          $this->_order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false)
-            ->save()
-          ;
-          $invoice = $payment->getCreatedInvoice();
-          if ($invoice){
-            $this->_order->sendNewOrderEmail()
-               ->setEmailSent(true)
-               ->setIsCustomerNotified(true)
-               ->save()
-            ;
-          }
+            $this->_order->save();
         } catch (Exception $e) {
           Mage::logException($e);
         }
