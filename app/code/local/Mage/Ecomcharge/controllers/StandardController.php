@@ -22,7 +22,7 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
   {
     return $this->getStandard()->getConfig();
   }
-  
+
   /**
    * Get API model
    *
@@ -78,7 +78,7 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
 
 
 
-    if (($this->responseArr['status']) == 'successful') {		 	
+    if (($this->responseArr['status']) == 'successful') {
 
       if ($this->getDebug()) {
         Mage::getModel('ecomcharge/api_debug')
@@ -96,14 +96,22 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
         return false;
       }
 
+      $ptype = $this->responseArr['ptype'];
+
+      if ($ptype != 'authorization' ||
+          $ptype != 'payment' ) {
+        # don't process other transaction types
+        return false;
+      }
+
       $order->addStatusToHistory(
         $order->getStatus(),
         Mage::helper('ecomcharge')->__('Customer successfully returned from eComCharge')
       );
 
       //update table
-      $shop_ptype = $this->getConfig()->getpayment_action();		
-      $shop_mode = $this->responseArr['testmode'];		
+      $shop_ptype = $this->getConfig()->getpayment_action();
+      $shop_mode = $this->responseArr['testmode'];
 
       $test_msg = '';
       if ($this->responseArr['testmode'] == 'true') $test_msg = "  *** Test Mode ***";
@@ -112,7 +120,7 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
 
 
       $dateNow = Mage::getModel('core/date')->date('yyyy-MM-dd H:m:s');
-      
+
       $transaction = Mage::getModel('ecomcharge/transaction');
       $transaction->setType($shop_ptype)
           ->setIdEcomchargeCustomer($order->getCustomerId())
@@ -135,14 +143,18 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
       if ($shop_ptype == 'authorize')	{
         $payment->addTransaction(Mage_Sales_Model_Order_Payment_Transaction::TYPE_AUTH);
         $message = Mage::helper('ecomcharge')->__('Callback received. eComCharge Payment Authorized. UID:'.$this->responseArr['transid'].$test_msg);			
-        $order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false);
+        if ($this->_canChangeToProcessing($order, $this->getConfig()->getNewOrderStatus())) {
+          $order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false);
+        }
       }
-      else 
+      else
       {
         $payment->addTransaction(Mage_Sales_Model_Order_Payment_Transaction::TYPE_CAPTURE);
         $message = Mage::helper('ecomcharge')->__('Callback received. eComCharge Payment Captured. UID:'.$this->responseArr['transid'].$test_msg);						
         $this->saveInvoice($order);
-        $order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false);
+        if ($this->_canChangeToProcessing($order, $this->getConfig()->getNewOrderStatus())) {
+          $order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false);
+        }
 
       }
 
@@ -151,7 +163,7 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
       $order->save();
 
     }
-    else {
+    elseif ($this->responseArr['status'] == 'failed') {
       $order = Mage::getModel('sales/order');
       $order->loadByIncrementId($this->responseArr['orderno']);
 
@@ -170,7 +182,7 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
 
 
     }
-    echo "OK";		 
+    echo "OK";
   }
   /**
    *  Save invoice for order
@@ -199,16 +211,17 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
    */
   protected function preResponse ()
   {
-  
+
     $paymentfrm = $this->getApi();
     $paymentfrm->validateIPN();
     $this->responseArr['currency'] = $paymentfrm->GetPaymentCurrency();
     $paymentfrm->SetCurrencyMultiplyer($this->responseArr['currency']);
     $this->responseArr['status'] = $paymentfrm->GetPaymentStatus();
-    $this->responseArr['amount'] = $paymentfrm->GetPaymentAmount();	
-    $this->responseArr['transid'] = $paymentfrm->GetPaymentUid();		
-    $this->responseArr['orderno'] = $paymentfrm->GetPaymentOrderno();			
+    $this->responseArr['amount'] = $paymentfrm->GetPaymentAmount();
+    $this->responseArr['transid'] = $paymentfrm->GetPaymentUid();
+    $this->responseArr['orderno'] = $paymentfrm->GetPaymentOrderno();
     $this->responseArr['testmode'] = $paymentfrm->Gettestmode();
+    $this->responseArr['ptype'] = $paymentfrm->GetPaymentType();
 
     $this->isValidResponse = true;
 
@@ -229,7 +242,7 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
     }
     $session = Mage::getSingleton('checkout/session');
     $session->setQuoteId($session->getEcomChargeStandardQuoteId(true));
-    $session->setErrorMessage(Mage::helper('ecomcharge')->__($message));	
+    $session->setErrorMessage(Mage::helper('ecomcharge')->__($message));
     $this->_redirect('ecomcharge/standard/failure');
   }
 
@@ -263,7 +276,7 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
       $paymentfrm = $this->getApi();
       $res_ar = $paymentfrm->Query2($uid);
       $uid = $res_ar['checkout']['gateway_response']['payment']['uid'];
-      $res_ar1 = $paymentfrm->Query($uid);			
+      $res_ar1 = $paymentfrm->Query($uid);
 
       $msg3d = '';
       if (array_key_exists('three_d_secure_verification', $res_ar1['transaction'])){
@@ -291,25 +304,30 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
         $payment->setTransactionId($uid)
           ->setParentTransactionId(null)
           ->setIsTransactionClosed(0);
+
         if ($shop_ptype == 'authorize')	{
           $payment->addTransaction(Mage_Sales_Model_Order_Payment_Transaction::TYPE_AUTH);
           $message = Mage::helper('ecomcharge')->__('Customer returned. eComCharge Payment Authorized. UID:'.$uid.', Payment Message: '.$msg3d.$test_msg);			
-          $order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false)
-            ->save();
+          if ($this->_canChangeToProcessing($order, $this->getConfig()->getNewOrderStatus())) {
+            $order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false)
+              ->save();
+          }
         }
-        else 
+        else
         {
           $payment->addTransaction(Mage_Sales_Model_Order_Payment_Transaction::TYPE_CAPTURE);
           $message = Mage::helper('ecomcharge')->__('Customer returned. eComCharge Payment Captured. UID:'.$uid.', Payment Message: '.$msg3d.$test_msg);						
-          $order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false)
-            ->save();		
-        }			  
-      }			
+          if ($this->_canChangeToProcessing($order, $this->getConfig()->getNewOrderStatus())) {
+            $order->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true, $message, false)
+              ->save();
+          }
+        }
+      }
     }
 
     $session = Mage::getSingleton('checkout/session');
     $session->setQuoteId($session->getEcomChargeStandardQuoteId(true));
-    $session->setErrorMessage(Mage::helper('ecomcharge')->__('Payment Complete'));	   		 	   
+    $session->setErrorMessage(Mage::helper('ecomcharge')->__('Payment Complete'));
     $this->_redirect('ecomcharge/standard/success');
   }
 
@@ -330,7 +348,7 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
   }
 
   /**
-   * When a customer cancel 
+   * When a customer cancel
    */
   public function cancelAction()
   {
@@ -347,11 +365,14 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
         $quote->setIsActive(true)->save();
         $orderModel->cancel();
         $orderModel->setStatus('canceled');
-        $orderModel->save();			
+        $orderModel->save();
       }
     }
     $this->_redirect('checkout/cart');
   }
 
+  private function _canChangeToProcessing($order, $new_order_status) {
+    return $order->getStatus() == $new_order_status ||
+           $order->getStatus() == Mage_Sales_Model_Order::STATE_PENDING_PAYMENT;
+  }
 }
-
