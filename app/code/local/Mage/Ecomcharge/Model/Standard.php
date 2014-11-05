@@ -1,20 +1,18 @@
 <?php
-
 class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
 {
   protected $_code  = 'ecomcharge_standard';
   protected $_formBlockType = 'ecomcharge/standard_form';
   protected $_infoBlockType = 'ecomcharge/standard_info';
-  protected $_isInitializeNeeded      = true;	
+  protected $_isInitializeNeeded      = true;
   protected $_isGateway               = true;
   protected $_canAuthorize            = true;
   protected $_canCapture              = true;
   protected $_canCapturePartial       = false;
   protected $_canRefund               = true;
   protected $_canUseForMultishipping  = false;
-  protected $_canSaveCc  = true;	
+  protected $_canSaveCc  = true;
   protected $_order = null;
-
 
   public function getOrder()
   {
@@ -36,12 +34,10 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
     return Mage::getSingleton('ecomcharge/config');
   }
 
-  
   public function getApi(){
       return Mage::getModel('ecomcharge/api')->getApi();
   }
-  
-  
+
   public function isAvailable($quote = null)
   {
     if (parent::isAvailable($quote)) {
@@ -49,7 +45,6 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
     }
     return false;
   }
-
 
   /**
    * Return the payment info model instance for the order
@@ -72,30 +67,28 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
    *
    * @param   Varien_Object $orderPayment
    */
-  public function capture(Varien_Object $payment, $amount)	
+  public function capture(Varien_Object $payment, $amount)
   {
     $trans_id = $payment->getParentTransactionId();
     if ($trans_id){
-      $currency_code = $payment->getOrder()->getBaseCurrencyCode();		
+      $currency_code = $payment->getOrder()->getBaseCurrencyCode();
       $order =  $payment->getOrder();
 
       $paymentfrm = $this->getApi();
       $paymentfrm->SetCurrencyMultiplyer($currency_code);
-      $resAr = $paymentfrm->Capture($trans_id, $amount);	
+      $resAr = $paymentfrm->Capture($trans_id, $amount);
 
-      if (isset($resAr['transaction']['status']) && ($resAr['transaction']['status'] == 'successful')){		
+      if (isset($resAr['transaction']['status']) && ($resAr['transaction']['status'] == 'successful')){
         if (!$payment->getParentTransactionId() ||
           $resAr['transaction']['uid'] != $payment->getParentTransactionId()) {
             $payment->setTransactionId($resAr['transaction']['uid']);
           }
-        $payment->setIsTransactionClosed(0);			
+        $payment->setIsTransactionClosed(0);
         return $this;
       }
       else Mage::throwException(Mage::helper('ecomcharge')->__('Payment capturing error.'));
     }
   }
-
-
 
   /**
    * Refund money
@@ -109,18 +102,18 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
     $reason = $this->getReason() ? $this->getReason() : Mage::helper('ecomcharge')->__('No Reason');
     $comment = $this->getComment() ? $this->getComment() : Mage::helper('ecomcharge')->__('No Comment');
     $trans_id = $payment->getParentTransactionId();
-    $currency_code = $payment->getOrder()->getBaseCurrencyCode();		
+    $currency_code = $payment->getOrder()->getBaseCurrencyCode();
 
     $paymentfrm = $this->getApi();
     $paymentfrm->SetCurrencyMultiplyer($currency_code);
     $resRedund = $paymentfrm->Refund($trans_id,$amount,$reason);
 
-    if ($resRedund['transaction']['status'] == 'successful') {	
+    if ($resRedund['transaction']['status'] == 'successful') {
       $shouldCloseCaptureTransaction = $payment->getOrder()->canCreditmemo() ? 0 : 1;
       $payment
         ->setIsTransactionClosed(1)
         ->setShouldCloseParentTransaction($shouldCloseCaptureTransaction);
-      $payment->setTransactionId($resRedund['transaction']['uid']);					 						 
+      $payment->setTransactionId($resRedund['transaction']['uid']);
       return $this;
     }else return false;
 
@@ -130,8 +123,6 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
   {
     return $this->_canRefund;
   }
-
-
 
   /**
    * Return the specified additional information from the payment info instance
@@ -144,14 +135,14 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
   {
     if (is_null($payment))
     {
-      $timesammp=DATE("dmyHis");		
+      $timesammp=DATE("dmyHis");
       $transactionId = $timesammp;
       $payment = $this->getInfoInstance();
-      $payment->setAdditionalInformation('transaction_id', $transactionId);		
+      $payment->setAdditionalInformation('transaction_id', $transactionId);
       $payment->save;
     }
     return $payment->getAdditionalInformation($key);
-  }	
+  }
 
   /**
    * Return the transaction id for the current transaction
@@ -161,8 +152,7 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
   public function get_TransactionId()
   {
     return $this->get_PaymentInfoData('transaction_id');
-  }	
-
+  }
 
   /**
    * Assign data to info model instance
@@ -175,7 +165,6 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
     if (!($data instanceof Varien_Object)) {
       $data = new Varien_Object($data);
     }
-
 
     $info = $this->getInfoInstance();
     $info->setCcType($data->getCcType())
@@ -190,7 +179,8 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
       ->setCcSsStartYear($data->getCcCid())
       ;
     return $this;
-  }	
+  }
+
   /**
    * Return debug flag
    *
@@ -200,7 +190,6 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
   {
     return $this->getConfig()->getDebug();
   }
-
 
   /**
    *  Return URL for Ecomcharge success response
@@ -237,7 +226,6 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
     return Mage::getUrl('ecomcharge/standard/cancel');
   }
 
-
   /**
    * Transaction unique ID sent to Ecomcharge and sent back by Ecomcharge for order restore
    * Using created order ID
@@ -253,6 +241,7 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
   {
     return true;
   }
+
   /**
    *  Returns cart formatted
    *  String format:
@@ -299,7 +288,6 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
     return $result;
   }
 
-
   /**
    *  Form block description
    *
@@ -321,7 +309,7 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
   public function getOrderPlaceRedirectUrl()
   {
     return Mage::getUrl('ecomcharge/standard/redirect');
-  }    
+  }
 
   /**
    * Get checkout session namespace
@@ -332,7 +320,6 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
   {
     return Mage::getSingleton('checkout/session');
   }
-
 
   /**
    * Get current quote
@@ -359,10 +346,9 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
     // Uncommented this line
     //    $info->setCcCidEnc($info->encrypt($info->getCcCid()));
 
-    //    $info->setCcNumber(null)->setCcCid(null); 
+    //    $info->setCcNumber(null)->setCcCid(null);
 
     return $this;
-
   }
 
   /**
@@ -382,74 +368,69 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
    *
    *  @return	  array Array of hidden form fields
    */
-  public function getStandardCheckoutFormFields ()	
+  public function getStandardCheckoutFormFields ()
   {
-
-    //        $order = $this->getOrder();		
-
     $session = Mage::getSingleton('checkout/session');
     $session->setEcomchargeStandardQuoteId($session->getQuoteId());
 
     $order = Mage::getModel('sales/order');
     $order->loadByIncrementId($session->getLastRealOrderId());
 
-
     $amount = $order->getBaseGrandTotal();
-    //        $description = Mage::app()->getStore()->getName() . ' ' . ' payment';
-    $transactionId = $this->getVendorTxCode();						
+    $transactionId = $this->getVendorTxCode();
     $description = 'Order # '.$transactionId;
 
-    $billing = $order->getBillingAddress();		
+    $billing = $order->getBillingAddress();
     $customer_details = Mage::getModel('customer/customer')->load( $order->getCustomerId() );
-    $payment = $this->getInfoInstance();		
+    $payment = $this->getInfoInstance();
 
-    $shop_ptype = $this->getConfig()->getpayment_action();		
+    $shop_ptype = $this->getConfig()->getpayment_action();
     list($lang_iso_code) = explode("_", Mage::app()->getLocale()->getLocaleCode());
 
     $sp_lang = array('en', 'es', 'tr', 'de', 'it', 'ru', 'zh', 'fr');
     if (!in_array($lang_iso_code, $sp_lang)) $lang_iso_code = 'en';
 
-
-    $currency_code = $order->getBaseCurrencyCode();		
+    $currency_code = $order->getBaseCurrencyCode();
 
     $settings = array(
-      "success_url" => $this->getSuccessURL(), 
+      "success_url" => $this->getSuccessURL(),
       "decline_url" => $this->getFailureURL(),
       "fail_url" => $this->getFailureURL(),
-      "cancel_url" => $this->getCancelURL(),	  
+      "cancel_url" => $this->getCancelURL(),
       "notification_url" => $this->getCallbackURL(),
       "language"=> $lang_iso_code);
 
     $order = array("currency" => $currency_code,
       "amount"=> $amount,
       "tracking_id" => $transactionId,
-      "description"=> $description)	 ;		
+      "description"=> $description)	 ;
 
     $customer = array(
       "ip"=> $_SERVER['REMOTE_ADDR'],
       "first_name"=> $billing->getFirstname(),
-      "last_name"=> $billing->getLastname(),	  
+      "last_name"=> $billing->getLastname(),
       "address"=> $billing->getStreetFull(),
       "country"=> $billing->getCountry(),
       "city"=> $billing->getCity(),
-      "zip"=> $billing->getPostcode(),	  
-      "phone"=> $billing->getTelephone(),	  			  
+      "zip"=> $billing->getPostcode(),
+      "phone"=> $billing->getTelephone(),
       "email"=> ( $billing->getEmail() ) ? $billing->getEmail() : $customer_details->getEmail()
-    );	  		
+    );
+
     if ($billing->getCountry() == 'US' || $billing->getCountry() == 'CA') {
-      $customer['state'] = $billing->getRegionCode();		
+      $customer['state'] = $billing->getRegionCode();
     }
 
     $paymentfrm = $this->getApi();
     $paymentfrm->SetCurrencyMultiplyer($order['currency']);
-    if ($shop_ptype == 'authorize') $paymentfrm->SetAuthorization();
+
+    if ($shop_ptype == Mage_Ecomcharge_Model_Config::PAYMENT_TYPE_AUTHORISE) $paymentfrm->SetAuthorization();
+
     $order["amount"] = $amount * $paymentfrm->GetCurrencyMultiplyer();
     $paymentfrm->SetCheckoutArray("settings", $settings);
     $paymentfrm->SetCheckoutArray("order", $order);
     $paymentfrm->SetCheckoutArray("customer", $customer);
     $token = $paymentfrm->GetToken();
-
-
 
     $action_url = 'https://checkout.ecomcharge.com/ctp/payments';
     $expyy = substr($payment->getCcExpYear(), 2);
@@ -459,8 +440,7 @@ class Mage_Ecomcharge_Model_Standard extends Mage_Payment_Model_Method_Abstract
     $coFields['request[credit_card][holder]'] =$payment->getCcOwner();
     $coFields['request[credit_card][exp_date]'] = $expmm .'/'. $expyy;
     $coFields['request[credit_card][verification_value]'] = $payment->getCcSsStartYear();
-    $coFields['request[token]'] = $token;		
-
+    $coFields['request[token]'] = $token;
 
     return $coFields;
   }
