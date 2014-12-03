@@ -111,6 +111,9 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
           ->save();
    }
 
+   /* wait for the customer to return from payment method */
+   sleep(5);
+   
     /* Check if order exists */
     $this->_loadOrder($this->responseArr['orderno']);
     if (!$this->_order->getId()) {
@@ -163,6 +166,10 @@ class Mage_Ecomcharge_StandardController extends Mage_Core_Controller_Front_Acti
         ;
         $invoice = $payment->getCreatedInvoice();
         if ($invoice){
+            $payment->setTransactionAdditionalInfo(
+                Mage::helper('paypal')->__('Last Transaction ID'),
+                $payment->getLastTransId()
+            );
             $this->_order->sendNewOrderEmail()
                ->setEmailSent(true)
                ->setIsCustomerNotified(true)
