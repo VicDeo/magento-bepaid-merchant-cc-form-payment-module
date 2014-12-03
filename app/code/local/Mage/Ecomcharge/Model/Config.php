@@ -8,7 +8,6 @@ class Mage_Ecomcharge_Model_Config extends Varien_Object
     const PAYMENT_TYPE_PAYMENT      = 'payment';
     const PAYMENT_TYPE_AUTHORISE    = 'authorization';
 
-
     /**
      *  Return config var
      *
@@ -27,7 +26,6 @@ class Mage_Ecomcharge_Model_Config extends Varien_Object
         }
         return $this->getData($key);
     }
-
 
     /**
      *  Return Store description sent to Ecomcharge
@@ -48,8 +46,6 @@ class Mage_Ecomcharge_Model_Config extends Varien_Object
     {
         return $this->getConfigData('shop_id');
     }
-
-
 
     /**
      *  Return Ecomcharge Payment Item ID
@@ -105,8 +101,4 @@ class Mage_Ecomcharge_Model_Config extends Varien_Object
     {
         return $this->getConfigData('debug_flag');
     }
-
-
-
-
 }

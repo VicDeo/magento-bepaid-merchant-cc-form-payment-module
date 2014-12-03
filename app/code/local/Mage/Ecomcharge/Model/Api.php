@@ -5,7 +5,6 @@ require_once ($externalLibPath);
 
 class Mage_Ecomcharge_Model_Api extends Mage_Core_Model_Abstract
 {
-
     public function getApi(){
         $config = Mage::getSingleton('ecomcharge/standard')->getConfig();
         return new ecomChargeLib(
@@ -14,6 +13,4 @@ class Mage_Ecomcharge_Model_Api extends Mage_Core_Model_Abstract
             $config->getMode()
         );
     }
-
-
 }
